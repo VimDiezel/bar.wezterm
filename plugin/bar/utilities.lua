@@ -5,7 +5,7 @@ local wez = require "wezterm"
 local H = {}
 
 ---@type string
-H.home = (os.getenv "USERPROFILE" or os.getenv "HOME" or wez.home_dir or ""):gsub("\\", "/")
+H.home = (os.getenv "HOME" or os.getenv "USERPROFILE" or wez.home_dir or ""):gsub("\\", "/")
 
 ---@type boolean
 H.is_windows = package.config:sub(1, 1) == "\\"
