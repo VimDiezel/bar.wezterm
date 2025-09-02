@@ -53,11 +53,21 @@ M.get_cwd = function(pane, search_git_root_instead)
       end
     end
 
-    if utilities.is_windows then
-      cwd = cwd:gsub("/" .. utilities.home .. "(.-)$", "~%1")
-    else
-      cwd = cwd:gsub(utilities.home .. "(.-)$", "~%1")
+    -- normalize slashes
+    cwd = cwd:gsub("\\", "/")
+    local home = (utilities.home or ""):gsub("\\", "/")
+
+    -- escape Lua pattern characters in home path
+    local function esc(s)
+      return (s:gsub("([%%%^%$%(%)%.%[%]%*%+%-%?])","%%%1"))
     end
+    local home_pat = esc(home)
+
+    -- replace if cwd starts with $HOME
+    cwd = cwd:gsub("^" .. home_pat, "~")
+    -- also handle paths that come with an extra leading slash (like /C:/Users/Name)
+    cwd = cwd:gsub("^/" .. home_pat, "~")
+
 
     ---search for the git root of the project if specified
     if search_git_root_instead then
