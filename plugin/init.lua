@@ -18,8 +18,8 @@ end
 ---returns the name of the package, used when requiring modules
 ---@return string
 local function get_require_path()
-  local path = "httpssCssZssZsgithubsDscomsZsadriankarlensZsbarsDswezterm"
-  local path_trailing_slash = "httpssCssZssZsgithubsDscomsZsadriankarlensZsbarsDsweztermsZs"
+  local path = "httpssCssZssZsgithubsDscomsZsVimDiezelsZsbarsDswezterm"
+  local path_trailing_slash = "httpssCssZssZsgithubsDscomsZsVimDiezelsZsbarsDsweztermsZs"
   return directory_exists(path_trailing_slash) and path_trailing_slash or path
 end
 
@@ -38,6 +38,7 @@ local config = require "bar.config"
 local tabs = require "bar.tabs"
 local user = require "bar.user"
 local spotify = require "bar.spotify"
+local mpd = require "bar.mpd"
 local paths = require "bar.paths"
 
 ---conforming to https://github.com/wez/wezterm/commit/e4ae8a844d8feaa43e1de34c5cc8b4f07ce525dd
@@ -178,6 +179,12 @@ wez.on("update-status", function(window, pane)
       name = "spotify",
       func = function()
         return spotify.get_currently_playing(options.modules.spotify.max_width, options.modules.spotify.throttle)
+      end,
+    },
+    {
+      name = "mpd",
+      func = function()
+        return mpd.get_currently_playing(options.modules.mpd.max_width, options.modules.mpd.throttle)
       end,
     },
     {
