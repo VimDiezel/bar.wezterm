@@ -37,6 +37,18 @@ M.get_currently_playing = function(max_width, throttle)
   if utilities._wait(throttle, last_update) then
     return stored_playback
   end
+  -- first check if mpd is playing
+  local status_success, status_output, status_stderr = wez.run_child_process { "mpc", "status" }
+  if not status_success then
+    wez.log_error(status_stderr)
+    return ""
+  end
+  -- check if status contains "playing"
+  if not status_output:match("playing") then
+    stored_playback = ""
+    last_update = os.time()
+    return ""
+  end
   -- fetch playback using mpc
   local success, pb, stderr = wez.run_child_process { "mpc", "current" }
   if not success then
