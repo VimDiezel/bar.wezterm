@@ -1,0 +1,68 @@
+local wez = require "wezterm"
+local utilities = require "bar.utilities"
+
+---@private
+---@class bar.mpd
+local M = {}
+
+local last_update = 0
+local stored_playback = ""
+
+---format mpd playback, to handle max_width nicely
+---@param pb string
+---@param max_width integer
+---@return string
+local format_playback = function(pb, max_width)
+  if #pb <= max_width then
+    return pb
+  end
+
+  -- split on " - "
+  local artist, track = pb:match "^(.-) %- (.+)$"
+  artist = artist or ""
+  track = track or ""
+  -- get artist before first ","
+  local pb_main_artist = artist:match "([^,]+)" .. " - " .. track
+  if #pb_main_artist <= max_width then
+    return pb_main_artist
+  end
+
+  -- fallback, return track name (trimmed to max width)
+  return track:sub(1, max_width)
+end
+
+---gets the currently playing song from mpd
+---@param max_width integer
+---@param throttle integer
+---@return string
+M.get_currently_playing = function(max_width, throttle)
+  if utilities._wait(throttle, last_update) then
+    return stored_playback
+  end
+  -- first check if mpd is playing
+  local status_success, status_output, status_stderr = wez.run_child_process { "mpc", "status" }
+  if not status_success then
+    wez.log_error(status_stderr)
+    return ""
+  end
+  -- check if status contains "playing"
+  if not status_output:match "playing" then
+    stored_playback = ""
+    last_update = os.time()
+    return ""
+  end
+  -- fetch playback using mpc
+  local success, pb, stderr = wez.run_child_process { "mpc", "current" }
+  if not success then
+    wez.log_error(stderr)
+    return ""
+  end
+
+  local res = format_playback(utilities._trim(pb) or "", max_width)
+  stored_playback = res
+  last_update = os.time()
+
+  return res
+end
+
+return M

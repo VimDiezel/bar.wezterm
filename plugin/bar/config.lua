@@ -25,6 +25,10 @@ local M = {}
 ---@field max_width number
 ---@field throttle number
 
+---@class option.mpd : option.module
+---@field max_width number
+---@field throttle number
+
 ---@class option.clock : option.module
 ---@field format string
 
@@ -119,6 +123,13 @@ M.options = {
     spotify = {
       enabled = false,
       icon = wez.nerdfonts.fa_spotify,
+      color = 3,
+      max_width = 64,
+      throttle = 15,
+    },
+    mpd = {
+      enabled = false,
+      icon = wez.nerdfonts.fa_music,
       color = 3,
       max_width = 64,
       throttle = 15,
