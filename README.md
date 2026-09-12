@@ -20,6 +20,14 @@ A tab bar configuration for wezterm, this configuration is heavily inspired by [
 > [!IMPORTANT]
 > The plugin will not work if `config.enable_tab_bar` is set to `false`. Make sure the tab bar is enabled (this is the default wezterm behavior, so you only need to act if you have explicitly disabled it).
 
+### 🔐 SSH
+
+The SSH module detects when the active pane is running an SSH session and displays an indicator in the right status bar. When enabled, it automatically hides the `cwd` module during SSH sessions, since the remote working directory is not available to WezTerm without OSC 7 configuration on the remote host.
+
+> [!NOTE]
+> bar.wezterm ships with this module disabled, please check example in
+> [Configuration](#%EF%B8%8F-configuration) on how to enable it.
+
 ### 🎵Spotify
 
 In order for the spotify integration to work you need to have [spotify-tui](https://github.com/Rigellute/spotify-tui) installed on you system. Follow their installation instructions on how to set it up.
@@ -88,8 +96,12 @@ local config = {
   modules = {
     tabs = {
       active_tab_fg = 4,
+      active_tab_bg = "transparent",
       inactive_tab_fg = 6,
+      inactive_tab_bg = "transparent",
       new_tab_fg = 2,
+      new_tab_bg = "transparent",
+      rules = {},
     },
     workspace = {
       enabled = true,
@@ -132,6 +144,11 @@ local config = {
       icon = wez.nerdfonts.oct_file_directory,
       color = 7,
     },
+    ssh = {
+      enabled = false,
+      icon = wez.nerdfonts.md_ssh,
+      color = 5,
+    },
     spotify = {
       enabled = false,
       icon = wez.nerdfonts.fa_spotify,
@@ -146,30 +163,82 @@ local config = {
 ### 🎨 Colors
 
 Every ansi color used is configurable, to change a color, pass in the desired
-ansi code to use for a specific setting.
+ansi code to use for a specific setting. You can use either an ansi color index
+(number) or a hex color string (e.g., `"#c6a0f6"`).
 
-If you want to change any other color used, since the plugin uses your themes colors you can configure the theme to get a different result. For instance, if I want to change the active tab background color I can do so like this:
+Tab background colors can be configured via the `modules.tabs` options:
 
 ```lua
-return {
-  -- ... your existing config
-  colors = {
-    tab_bar = {
-      active_tab = {
-        bg_color = "#26233a"
-      }
-    }
-  }
-}
+bar.apply_to_config(config, {
+  modules = {
+    tabs = {
+      active_tab_fg = 1,
+      active_tab_bg = 6,           -- ansi color index
+      -- or use a hex color:
+      -- active_tab_bg = "#c6a0f6",
+    },
+  },
+})
 ```
 
 #### 🖌️ Color table
 
-| Color option                    | Default       |
-| ------------------------------- | ------------- |
-| `tab_bar.background`            | `transparent` |
-| `tab_bar.active_tab.bg_color`   | `transparent` |
-| `tab_bar.inactive_tab.bg_color` | `transparent` |
+| Config option       | Default       |
+| ------------------- | ------------- |
+| `active_tab_fg`     | `4`           |
+| `active_tab_bg`     | `transparent` |
+| `inactive_tab_fg`   | `6`           |
+| `inactive_tab_bg`   | `transparent` |
+| `new_tab_fg`        | `2`           |
+| `new_tab_bg`        | `transparent` |
+
+### 🎯 Dynamic tab customization rules
+
+You can override tab's color and icon based on its domain and active pane's directory:
+
+```lua
+bar.apply_to_config(config, {
+  modules = {
+    tabs = {
+      rules = {
+        {
+          -- check domain name; requires exact, case-sensitive matchs
+          domain = "WSL:Ubuntu",
+          -- you can override tab's color or icon
+          active_tab_fg = 3,
+          inactive_tab_fg = 3
+        },
+        {
+          -- check domain name using pattern (see lua's string.match)
+          domain = { pattern = "^SSH" },
+          active_tab_fg = 1,
+          inactive_tab_fg = 1,
+          icon = wez.nerdfonts.md_ssh
+        },
+        {
+          -- check domain name using a custom predicate
+          domain = function(name) return name:find "prod" ~= nil end,
+          active_tab_bg = "#eb6f92",
+          inactive_tab_bg = "#eb6f92"
+        },
+        {
+          -- check cwd, same syntax as with domain names; paths compare with a
+          -- trailing "/", so this matches /home/pet-projects itself as well
+          cwd = { pattern = "^/home/pet-projects/" },
+          -- when cwd and domain are given at the same time, both should match
+          domain = "local",
+          active_tab_fg = 6,
+          inactive_tab_fg = 6
+        },
+      },
+    },
+  },
+})
+```
+
+Rules are evaluated in list order. Each matching rule overrides the properties it
+names. For example, domain `SSH:prod-01` will be matched by two rules from above;
+first will set tab's icon and foreground, second will override foreground only.
 
 ## 📜 License
 
